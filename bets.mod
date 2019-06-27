@@ -20,22 +20,19 @@ s.t. max {i in H, j in O}: money[i, j] * odds[i, j] = max_profit[i, j];
 # We are bad at sports betting, so all outcomes should be leveled in
 # terms of winning. Quirk: The profit of Napoleon is 50% of the
 # initial money, since we get 50% of the initial money in free bets.
-s.t. equilib {j in O, k in O}: sum {i in H} max_profit[i, j] = sum {i in H} max_profit[i, k];
+s.t. equilib {j in O, k in O: k <> j}: sum {i in H} max_profit[i, j] = sum {i in H} max_profit[i, k];
 
 # Special conditions for bonuses
 # TODO: make conditions dynamic
-s.t. betfirst {i in H: i = "betFIRST"}: sum {j in O} money[i, j] <= 400;
-s.t. bingoal {i in H: i = "Bingoal"}: sum {j in O} money[i, j] <= 200;
-s.t. bwin {i in H: i = "Bwin"}: sum {j in O} money[i, j] <= 240;
-s.t. betway {i in H: i = "Betway"}: sum {j in O} money[i, j] <= 200;
-s.t. bet777 {i in H: i = "Bet777"}: sum {j in O} money[i, j] <= 450;
-s.t. napoleon {i in H: i = "Napoleon"}: sum {j in O} money[i, j] <= 400;
-s.t. unibet {i in H: i = "Unibet"}: sum {j in O} money[i, j] <= 100;
-s.t. ladbrokes {i in H: i = "Ladbrokes"}: sum {j in O} money[i, j] <= 400;
+s.t. per_house_condition {i in H}: sum {j in O} money[i, j] <= money_with_bonus_per_house[i];
 
 # TODO: add special ordered set of type 1 if no more than one betting
 # house should be used for one option:
 # https://en.wikibooks.org/wiki/GLPK/Modeling_tips#SOS1_:_special_ordered_set_of_type_1
+
+# TODO: total money constraint
+
+# TODO:
 
 solve;
 
@@ -72,11 +69,11 @@ param odds:      Win    Draw    Lose :=
     Ladbrokes   2.25    2.80    3.40;
 
 param money_with_bonus_per_house :=
-    betFIRST 100
-    Bingoal 100
-    Bwin 100
-    Betway 100
-    Bet777 100
-    Napoleon 100
+    betFIRST 400
+    Bingoal 200
+    Bwin 240
+    Betway 200
+    Bet777 450
+    Napoleon 400
     Unibet 100
-    Ladbrokes 100;
+    Ladbrokes 400;
