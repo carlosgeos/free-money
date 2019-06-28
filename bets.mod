@@ -19,6 +19,18 @@ var max_profit {i in H, j in O};
 # value can be non-zero)
 var chosen {i in H, j in O} binary;
 
+##########
+# Checks #
+##########
+
+### These might change with time ###
+
+# check
+
+######################
+# Objective function #
+######################
+
 maximize profit: sum {i in H, j in O} max_profit[i, j];
 
 # Max values for each option
@@ -28,7 +40,6 @@ s.t. max {i in H, j in O}: money[i, j] * bonuses[i] * odds[i, j] + money[i, j] *
 s.t. one_option_one_house {i in H, j in O}: money[i, j] <= chosen[i, j] * dummy_max;
 s.t. one_option_one_house_aux {i in H}: sum {j in O} chosen[i, j] = 1;
 
-
 # To force a second round, uncomment the following. It can be
 # problematic when used in the second round itself.
 #s.t. two_houses_per_option {j in O}: sum {i in H} chosen[i, j] >= 2;
@@ -37,15 +48,29 @@ s.t. one_option_one_house_aux {i in H}: sum {j in O} chosen[i, j] = 1;
 # terms of winning.
 s.t. equilib {j in O, k in O: k <> j}: sum {i in H} max_profit[i, j] - sum {i in H} max_profit[i, k] <= slack;
 
-# Special conditions for bonuses
+# There is a maximum amount we can deposit in each house (no more
+# bonus after that)
 s.t. per_house_condition {i in H}: sum {j in O} money[i, j] <= money_per_house[i];
+
+# Special conditions for bonuses. These can change over time.
+s.t. bonus_condition1 {i in H, j in O}: (if i = 'betFIRST' and odds[i, j] < 1.4 then money[i, j] else 0) = 0;
 
 solve;
 
+##########################
+# Post processing checks #
+##########################
+
+# check
+
+#############
+# Reporting #
+#############
+
 printf '#################################\n\n';
 
-printf 'Starting money: %.2f\n\n', sum {i in H} money_per_house[i];
-
+printf 'Starting money: %.2f\n', sum {i in H} money_per_house[i];
+printf 'Money used: %.2f\n\n', sum {i in H, j in O} money[i, j];
 printf 'Total: %.2f\n', sum {i in H, j in O} max_profit[i, j];
 printf {j in O}: 'Total for %s = %.2f\n', j, sum{i in H} max_profit[i, j];
 printf '\n';
