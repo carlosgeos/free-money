@@ -1,10 +1,8 @@
 set H;                          # Betting houses
 set O;                          # Options
 param odds {i in H, j in O};
+param after_bet {i in H};
 param money_with_bonus_per_house{i in H};
-# Binary value that determines if betting house h_i is chosen for some
-# option
-var chosen {i in H, j in O} binary;
 
 # Amount of money in each house for each option
 var money {i in H, j in O} >= 0;
@@ -15,11 +13,10 @@ var max_profit {i in H, j in O};
 maximize profit: sum {i in H, j in O} max_profit[i, j];
 
 # Max values for each option
-s.t. max {i in H, j in O}: money[i, j] * odds[i, j] = max_profit[i, j];
+s.t. max {i in H, j in O}: money[i, j] * odds[i, j] + money[i, j] * after_bet[i] = max_profit[i, j];
 
 # We are bad at sports betting, so all outcomes should be leveled in
-# terms of winning. Quirk: The profit of Napoleon is 50% of the
-# initial money, since we get 50% of the initial money in free bets.
+# terms of winning.
 s.t. equilib {j in O, k in O: k <> j}: sum {i in H} max_profit[i, j] = sum {i in H} max_profit[i, k];
 
 # Special conditions for bonuses
@@ -29,10 +26,6 @@ s.t. per_house_condition {i in H}: sum {j in O} money[i, j] <= money_with_bonus_
 # TODO: add special ordered set of type 1 if no more than one betting
 # house should be used for one option:
 # https://en.wikibooks.org/wiki/GLPK/Modeling_tips#SOS1_:_special_ordered_set_of_type_1
-
-# TODO: total money constraint
-
-# TODO:
 
 solve;
 
@@ -77,3 +70,13 @@ param money_with_bonus_per_house :=
     Napoleon 400
     Unibet 100
     Ladbrokes 400;
+
+param after_bet :=
+    betFIRST 0
+    Bingoal 0
+    Bwin 0
+    Betway 0
+    Bet777 0
+    Napoleon 0.5
+    Unibet 0
+    Ladbrokes 0;
