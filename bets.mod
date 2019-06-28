@@ -1,5 +1,7 @@
 set H;                          # Betting houses
 set O;                          # Options
+param dummy_max;
+param relaxation;
 param odds {i in H, j in O};
 param after_bet {i in H};
 param freebets {i in H};
@@ -11,14 +13,21 @@ var money {i in H, j in O} >= 0;
 # Amount of money made for each option, for each house
 var max_profit {i in H, j in O};
 
+# Auxiliary variable to create a Special Ordered Set 1 (at most one
+# value can be non-zero)
+var chosen {i in H, j in O} binary;
+
 maximize profit: sum {i in H, j in O} max_profit[i, j];
 
 # Max values for each option
 s.t. max {i in H, j in O}: money[i, j] * odds[i, j] + money[i, j] * after_bet[i] - money[i, j] * freebets[i] = max_profit[i, j];
 
+s.t. one_option_one_house {i in H, j in O}: money[i, j] <= chosen[i, j] * dummy_max;
+s.t. one_option_one_house_aux {i in H}: sum {j in O} chosen[i, j] = 1;
+
 # We are bad at sports betting, so all outcomes should be leveled in
 # terms of winning.
-s.t. equilib {j in O, k in O: k <> j}: sum {i in H} max_profit[i, j] = sum {i in H} max_profit[i, k];
+s.t. equilib {j in O, k in O: k <> j}: sum {i in H} max_profit[i, j] - sum {i in H} max_profit[i, k] <= relaxation;
 
 # Special conditions for bonuses
 # TODO: make conditions dynamic
@@ -32,7 +41,7 @@ solve;
 
 printf '#################################\n\n';
 
-printf {j in O}: 'Total for %s = %.3f\n', j, sum{i in H} max_profit[i, j];
+printf {j in O}: 'Total for %s = %.2f\n', j, sum{i in H} max_profit[i, j];
 printf '\n';
 
 for {j in O}{
