@@ -1,0 +1,47 @@
+data;
+
+# Houses
+set H := betFIRST Bingoal Bwin Betway Bet777 Napoleon Unibet Ladbrokes;
+
+# Options for the home team
+set O := Win Draw Lose;
+
+param odds:      Win    Draw    Lose :=
+    betFIRST    2.30    3.05    3.45
+    Bingoal     2.30    2.95    3.60
+    Bwin        2.25    3.10    3.40
+    Betway      2.37    2.90    3.40
+    Bet777      2.25    3.00    3.45
+    Napoleon    2.35    3.05    3.30
+    Unibet      2.35    3.05    3.30
+    Ladbrokes   2.25    2.80    3.40;
+
+param money_with_bonus_per_house :=
+    betFIRST 400
+    Bingoal 200
+    Bwin 240
+    Betway 200
+    Bet777 450
+    Napoleon 400
+    Unibet 100
+    Ladbrokes 400;
+
+param after_bet :=
+    betFIRST 0
+    Bingoal 0
+    Bwin 0
+    Betway 0
+    Bet777 0
+    Napoleon 0.5
+    Unibet 0
+    Ladbrokes 0;
+
+param freebets :=
+    betFIRST 0
+    Bingoal 0
+    Bwin 0
+    Betway 0
+    Bet777 0
+    Napoleon 0
+    Unibet 0
+    Ladbrokes 0.5;
