@@ -1,11 +1,13 @@
 set H;                          # Betting houses
 set O;                          # Options
 param dummy_max;
-param relaxation;
+param slack;
 param odds {i in H, j in O};
-param after_bet {i in H};
+param bonuses {i in H};
 param freebets {i in H};
-param money_with_bonus_per_house{i in H};
+param money_per_house {i in H};
+param stake {i in H};           # this is used to substract the stake
+                                # (often done when using freebets)
 
 # Amount of money in each house for each option
 var money {i in H, j in O} >= 0;
@@ -20,27 +22,31 @@ var chosen {i in H, j in O} binary;
 maximize profit: sum {i in H, j in O} max_profit[i, j];
 
 # Max values for each option
-s.t. max {i in H, j in O}: money[i, j] * odds[i, j] + money[i, j] * after_bet[i] - money[i, j] * freebets[i] = max_profit[i, j];
+s.t. max {i in H, j in O}: money[i, j] * bonuses[i] * odds[i, j] + money[i, j] * freebets[i] - money[i, j] * stake[i] = max_profit[i, j];
 
+# For the same house, betting on different outcomes is not possible
 s.t. one_option_one_house {i in H, j in O}: money[i, j] <= chosen[i, j] * dummy_max;
 s.t. one_option_one_house_aux {i in H}: sum {j in O} chosen[i, j] = 1;
 
+
+# To force a second round, uncomment the following. It can be
+# problematic when used in the second round itself.
+#s.t. two_houses_per_option {j in O}: sum {i in H} chosen[i, j] >= 2;
+
 # We are bad at sports betting, so all outcomes should be leveled in
 # terms of winning.
-s.t. equilib {j in O, k in O: k <> j}: sum {i in H} max_profit[i, j] - sum {i in H} max_profit[i, k] <= relaxation;
+s.t. equilib {j in O, k in O: k <> j}: sum {i in H} max_profit[i, j] - sum {i in H} max_profit[i, k] <= slack;
 
 # Special conditions for bonuses
-# TODO: make conditions dynamic
-s.t. per_house_condition {i in H}: sum {j in O} money[i, j] <= money_with_bonus_per_house[i];
-
-# TODO: add special ordered set of type 1 if no more than one betting
-# house should be used for one option:
-# https://en.wikibooks.org/wiki/GLPK/Modeling_tips#SOS1_:_special_ordered_set_of_type_1
+s.t. per_house_condition {i in H}: sum {j in O} money[i, j] <= money_per_house[i];
 
 solve;
 
 printf '#################################\n\n';
 
+printf 'Starting money: %.2f\n\n', sum {i in H} money_per_house[i];
+
+printf 'Total: %.2f\n', sum {i in H, j in O} max_profit[i, j];
 printf {j in O}: 'Total for %s = %.2f\n', j, sum{i in H} max_profit[i, j];
 printf '\n';
 

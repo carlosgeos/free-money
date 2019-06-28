@@ -18,25 +18,25 @@ param odds:      Win    Draw    Lose :=
     Unibet      2.35    3.05    3.30
     Ladbrokes   2.25    2.80    3.40;
 
-param money_with_bonus_per_house :=
-    betFIRST 400
-    Bingoal 200
-    Bwin 240
-    Betway 200
-    Bet777 450
+param money_per_house :=
+    betFIRST 200
+    Bingoal 100
+    Bwin 120
+    Betway 100
+    Bet777 300
     Napoleon 200
-    Unibet 100
+    Unibet 50
     Ladbrokes 200;
 
-param after_bet :=
-    betFIRST 0
-    Bingoal 0
-    Bwin 0
-    Betway 0
-    Bet777 0
-    Napoleon 0.5
-    Unibet 0
-    Ladbrokes 0.5;
+param bonuses :=
+    betFIRST 2
+    Bingoal 2
+    Bwin 2
+    Betway 2
+    Bet777 1.5
+    Napoleon 1
+    Unibet 2
+    Ladbrokes 1;
 
 param freebets :=
     betFIRST 0
@@ -44,8 +44,18 @@ param freebets :=
     Bwin 0
     Betway 0
     Bet777 0
-    Napoleon 0
+    Napoleon 1
     Unibet 0
+    Ladbrokes 1;
+
+param stake :=
+    betFIRST 0
+    Bingoal 0
+    Bwin 0
+    Betway 0
+    Bet777 0
+    Napoleon 0
+    Unibet 1
     Ladbrokes 0;
 
-param relaxation := 100;
+param slack := 150;
