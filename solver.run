@@ -1,0 +1,19 @@
+solve;
+printf '#################################\n\n';
+
+printf 'Starting money: %.2f\n', money_avail;
+printf 'Money used: %.2f\n\n', sum {i in B, j in O} money[i, j];
+printf 'Total: %.2f\n', sum {i in B, j in O} max_profit[i, j];
+printf {j in O}: 'Total for %s = %.2f\n', j, sum{i in B} max_profit[i, j];
+printf '\n';
+
+for {j in O}{
+    printf 'Bookies on %s:\n' , j;
+    for {i in B: money[i, j] > 0} {
+        printf '%s ', i;
+    }
+#    printf ''
+    printf '\n\n';
+}
+
+printf {i in B, j in O: money[i, j] <> 0}: 'Money on %10s for %2s: \t%6.2fe | Profit: %6.2fe\n', i, j, money[i, j], max_profit[i, j];
