@@ -1,6 +1,6 @@
 <document>
-<category>cp</category>
-<solver>Knitro</solver>
+<category>minco</category>
+<solver>SOLVER_NAME</solver>
 <inputMethod>AMPL</inputMethod>
 
 <model><![CDATA[
