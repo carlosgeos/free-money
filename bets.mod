@@ -37,7 +37,8 @@ var chosen_2 {i in Bookies, j in Outcomes, m in Matches} binary;
 # Objective function #
 ######################
 
-maximize profit: sum {i in Bookies, j in Outcomes, m in Matches} profit_2[i, j, m];
+maximize profit:
+    sum {i in Bookies, j in Outcomes, m in Matches} profit_2[i, j, m];
 
 # Max values in each round
 s.t. r1 {i in Bookies, j in Outcomes, m in Matches}: money[i, j, m] * bonuses[i] * odds[i, j, m] = profit_1[i, j, m];
@@ -86,12 +87,6 @@ s.t. total_money: sum {i in Bookies, j in Outcomes, m in Matches} money[i, j, m]
 ##########################
 
 # check
-
-#############
-# Reporting #
-#############
-# solve;
-# printf '#################################\n\n';
 
 # printf 'Starting money: %.2f\n', money_avail;
 # printf 'Money used: %.2f\n\n', sum {i in Bookies, j in Outcomes, m in Matches} money[i, j, m];

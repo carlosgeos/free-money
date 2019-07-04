@@ -1,6 +1,7 @@
 <document>
 <category>minco</category>
 <solver>SOLVER_NAME</solver>
+<priority>short</priority>
 <inputMethod>AMPL</inputMethod>
 
 <model><![CDATA[
