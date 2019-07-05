@@ -36,7 +36,6 @@ except ImportError:
 
 parser = argparse.ArgumentParser()
 parser.add_argument("action", help="specify XML file name or queue for action")
-parser.add_argument("--solver", help="specify a solver available at the NEOS server", default="Knitro")
 parser.add_argument("--server", default="https://neos-server.org:3333", help="URL to NEOS Server XML-RPC interface")
 parser.add_argument("--username", default=os.environ.get("NEOS_USERNAME", None), help="username for NEOS Server user account")
 parser.add_argument("--password", default=os.environ.get("NEOS_PASSWORD", None), help="password for NEOS Server user account")
@@ -52,28 +51,6 @@ if alive != "NeosServer is alive\n":
 if args.action == "queue":
     msg = neos.printQueue()
     sys.stdout.write(msg)
-
-elif args.action == "build_xml":
-
-    solver = args.solver
-
-    with open('bets.mod', 'rb') as f:
-        model = f.read().decode('UTF-8')
-
-    with open('matches.dat', 'rb') as f:
-        data = f.read().decode('UTF-8')
-
-    with open('solver.run', 'rb') as f:
-        commands = f.read().decode('UTF-8')
-
-    with open('neos_template.xml', 'rb') as f:
-        template = f.read().decode('UTF-8')
-
-    template = template.replace('MODEL_FILE', model).replace('DATA_FILE', data).replace('COMMANDS_FILE', commands).replace('SOLVER_NAME', solver)
-
-    with open('neos_input.xml', 'w+') as f:
-        f.write(template)
-
 else:
     xml = ""
     try:

@@ -1,23 +1,19 @@
+glpk:
+	python scripts/glpk_build.py
+	glpsol --math glpk_input.mod -d matches.dat
+
 knitro:
-	python NeosClient.py build_xml --solver Knitro
-	python NeosClient.py neos_input.xml
+	python scripts/neos_build.py Knitro
+	python scripts/NeosClient.py neos_input.xml
 
 baron:
-	python NeosClient.py build_xml --solver BARON
-	python NeosClient.py neos_input.xml
+	python scripts/neos_build.py BARON
+	python scripts/NeosClient.py neos_input.xml
 
 couenne:
-	python NeosClient.py build_xml --solver Couenne
-	python NeosClient.py neos_input.xml
-
-cplex:
-	python NeosClient.py build_xml --solver CPLEX
-	python NeosClient.py neos_input.xml
+	python scripts/neos_build.py Couenne
+	python scripts/NeosClient.py neos_input.xml
 
 mosek:
-	python NeosClient.py build_xml --solver MOSEK
-	python NeosClient.py neos_input.xml
-
-glpk:
-	python glpk_build.py
-	glpsol --math glpk_input.mod -d matches.dat
+	python scripts/neos_build.py MOSEK
+	python scripts/NeosClient.py neos_input.xml
