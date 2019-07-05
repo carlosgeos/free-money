@@ -49,16 +49,6 @@ param freebets_multiplier :=
     Circus 1
     Ladbrokes 1;
 
-param stake :=
-    betFIRST 0
-    Bingoal 0
-    Bwin 0
-    Betway 0
-    Bet777 0
-    Napoleon 0
-    Circus 0
-    Ladbrokes 0;
-
 ##################
 # Model settings #
 ##################
@@ -106,4 +96,4 @@ param odds :=
     Circus      2.18    0    1.70
     Ladbrokes   2.111   0    1.50;
 
-param profit_slack := 800;
+param profit_slack := 400;

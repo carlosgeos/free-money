@@ -53,7 +53,7 @@ if args.action == "queue":
     msg = neos.printQueue()
     sys.stdout.write(msg)
 
-elif args.action == "create_xml":
+elif args.action == "build_xml":
 
     solver = args.solver
 
@@ -71,7 +71,7 @@ elif args.action == "create_xml":
 
     template = template.replace('MODEL_FILE', model).replace('DATA_FILE', data).replace('COMMANDS_FILE', commands).replace('SOLVER_NAME', solver)
 
-    with open('neos_input.xml', 'w') as f:
+    with open('neos_input.xml', 'w+') as f:
         f.write(template)
 
 else:

@@ -4,6 +4,33 @@ printf '#################################\n\n';
 printf 'Starting money: %.2f\n', money_avail;
 printf 'Money used: %.2f\n\n', sum {i in Bookies, j in Outcomes, m in Matches} money[i, j, m];
 
-printf 'Total after first bet: %.2f\n', sum {i in Bookies, j in Outcomes, m in Matches} profit_1[i, j, m];
-printf {j in Outcomes, m in Matches}: 'Total for %s = %.2f\n', j, sum{i in Bookies} profit_1[i, j, m];
-printf '\n';
+printf '### FIRST BET ###\n';
+printf {m in Matches: chosen_match_1[m] = 1}: 'Best match for round 1: %s\n', m;
+printf {j in Outcomes}: 'Potential on %s = %.2f\n\n', j, sum{i in Bookies, m in Matches} profit_1[i, j, m];
+
+for {j in Outcomes, m in Matches}{
+    printf 'Bookies on %s [%s]:\n', j, m;
+    for {i in Bookies: money[i, j, m] > 0.1} {
+        printf '%s ', i, money[i, j, m];
+    }
+#    printf ''
+    printf '\n\n';
+}
+
+printf {i in Bookies, j in Outcomes, m in Matches: money[i, j, m] > 0.1}: 'Money on %10s for %2s: \t%6.2fe | Profit: %6.2fe + %6.2fe (FREEBETS)\n', i, j, money[i, j, m], profit_1[i, j, m], freebets[i];
+
+
+printf '### SECOND ROUND ###\n';
+printf {m in Matches: chosen_match_2[m] = 1}: 'Best match for round 2: %s\n', m;
+printf {j in Outcomes}: 'Potential on %s = %.2f\n\n', j, sum{i in Bookies, m in Matches} profit_2[i, j, m];
+
+for {j in Outcomes, m in Matches}{
+    printf 'Bookies on %s [%s]:\n', j, m;
+    for {i in Bookies: profit_1[i, j, m] > 0.1} {
+        printf '%s ', i, profit_1[i, j, m];
+    }
+#    printf ''
+    printf '\n\n';
+}
+
+printf {i in Bookies, j in Outcomes, m in Matches: profit_1[i, j, m] > 0.1 or freebets[i] > 0.1}: 'Rebet on %10s for %2s: \t%6.2fe | Profit: %6.2fe\n', i, j, profit_1[i, j, m] + freebets[i], profit_2[i, j, m];
