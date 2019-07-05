@@ -5,23 +5,20 @@ printf 'Starting money: %.2f\n', money_avail;
 printf 'Money used: %.2f\n\n', sum {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]} money[b, m, o];
 
 printf '### FIRST BET ###\n';
-printf {m in MATCHES: chosen_match_1[m] = 1}: 'Best match for round 1: %s\n', m;
-printf {m in MATCHES, o in OUTCOMES[m]: sum{b in BOOKIES} profit_1[b, m, o] > 0}:
-    'Potential on %s = %.2f\n\n', o, sum{b in BOOKIES} profit_1[b, m, o];
+printf {m in MATCHES: chosen_match_1[m] > 0}: 'Best match for round 1: %s\n', m;
+printf {m in MATCHES, o in OUTCOMES[m]: sum{b in BOOKIES} chosen_1[b, m, o] > 0}:
+    'Potential on %2s = \t%.2fe\n', o, sum{b in BOOKIES} profit_1[b, m, o];
 
-for {m in MATCHES, o in OUTCOMES[m]}{
-    printf 'Bookies on %s [%s]:\n', o, m;
-    for {b in BOOKIES: money[b, m, o] > 0} {
-        printf '%s ', b;
-    }
+for {m in MATCHES, o in OUTCOMES[m]: sum {b in BOOKIES} money[b, m, o] > 0}{
+    printf 'Bookies on %s:\n', o;
+    printf {b in BOOKIES: money[b, m, o] > 0}: '%s ', b;
     printf '\n\n';
 }
 
 printf {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]: money[b, m, o] > 0}: 'Money on %10s for %2s: \t%6.2fe | Profit: %7.2fe + %7.2fe (FREEBETS)\n', b, o, money[b, m, o], profit_1[b, m, o], freebets[b];
 
-
 printf '### SECOND ROUND ###\n';
-printf {m in MATCHES: chosen_match_2[m] = 1}: 'Best match for round 2: %s\n', m;
+printf {m in MATCHES: chosen_match_2[m] > 0}: 'Best match for round 2: %s\n', m;
 
 for {m in MATCHES, o in OUTCOMES[m]}{
     printf 'Bookies on %s [%s]:\n', o, m;
@@ -31,7 +28,8 @@ for {m in MATCHES, o in OUTCOMES[m]}{
     printf '\n\n';
 }
 
-printf {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]: profit_1[b, m, o] > 0 or freebets[b] > 0}: 'Rebet on %10s for %2s: \t%7.2fe | Profit: %7.2fe\n', b, o, rebet[b, m, o], profit_2[b, m, o];
+printf {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]: profit_1[b, m, o] > 0 or freebets[b] > 0}:
+    'Rebet on %10s for %2s: \t%7.2fe | Profit: %7.2fe\n', b, o, rebet_allocation[b, m, o], profit_2[b, m, o];
 
 printf {m in MATCHES, o in OUTCOMES[m]: sum{b in BOOKIES} profit_2[b, m, o] > 0}:
     'Potential on %s = %.2f\n\n', o, sum{b in BOOKIES} profit_2[b, m, o];

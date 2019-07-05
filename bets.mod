@@ -17,7 +17,8 @@ param profit_slack;
 var money {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
 var profit_1 {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
 var freebets {BOOKIES} >= 0;
-var rebet {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
+var rebet {BOOKIES} >= 0;
+var rebet_allocation {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
 var profit_2 {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
 
 # Auxiliary variables to create Special Ordered Sets 1 (at most one
@@ -46,13 +47,16 @@ s.t. r1 {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
     money[b, m, o] * bonus_multiplier[b] * odds[b, m, o] = profit_1[b, m, o];
 
 s.t. fb {b in BOOKIES}:
-    sum {m in MATCHES, o in OUTCOMES[m]} money[b, m, o] * freebets_multiplier[b] = freebets[b];
+    (sum {m in MATCHES, o in OUTCOMES[m]} money[b, m, o]) * freebets_multiplier[b] = freebets[b];
 
-s.t. rbt {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
-    rebet[b, m, o] = profit_1[b, m, o] + freebets[b];
+s.t. rbt {b in BOOKIES}:
+    rebet[b] <= (sum {m in MATCHES, o in OUTCOMES[m]} profit_1[b, m, o]) + freebets[b];
+
+s.t. rbt2 {b in BOOKIES}:
+    sum {m in MATCHES, o in OUTCOMES[m]} rebet_allocation[b, m, o] <= rebet[b];
 
 s.t. r2 {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
-    rebet[b, m, o] * odds[b, m, o] - freebets[b] = profit_2[b, m, o];
+    (rebet_allocation[b, m, o] * odds[b, m, o]) - freebets[b] = profit_2[b, m, o];
 
 # For the same bookie, betting on different outcomes is not possible
 s.t. first_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
@@ -60,24 +64,30 @@ s.t. first_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOME
 s.t. first_round_one_option_one_bookie_aux {b in BOOKIES}:
     sum {m in MATCHES, o in OUTCOMES[m]} chosen_1[b, m, o] = 1;
 s.t. second_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
-    rebet[b, m, o] <= chosen_2[b, m, o] * dummy_max;
+    rebet_allocation[b, m, o] <= chosen_2[b, m, o] * dummy_max;
 s.t. second_round_one_option_one_bookie_aux {b in BOOKIES}:
     sum {m in MATCHES, o in OUTCOMES[m]} chosen_2[b, m, o] = 1;
 
+s.t. asdf {m in MATCHES, o in OUTCOMES[m]}:
+    sum {b in BOOKIES} money[b, m, o] >= 10 * chosen_match_1[m];
+
+# s.t. qer {b in BOOKIES}:
+#     sum {m in MATCHES, o in OUTCOMES[m]} money[b, m, o] >= 10;
+
 # For the same bookie, even when different on the same outcome, only
 # one match should be chosen
-s.t. first_betting_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+s.t. first_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
     money[b, m, o] <= chosen_match_1[m] * dummy_max;
-s.t. first_betting_round_one_match_aux:
+s.t. first_round_one_match_aux:
     sum {m in MATCHES} chosen_match_1[m] = 1;
-# s.t. second_betting_round_one_match {b in BOOKIES, o in OUTCOMES, m in MATCHES}:
+# s.t. second_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
 #     rebet[b, m, o] <= chosen_match_2[m] * dummy_max;
-# s.t. second_betting_round_one_match_aux:
+# s.t. second_round_one_match_aux:
 #     sum {m in MATCHES} chosen_match_2[m] = 1;
 
-# MATCHES in different rounds should not be the same
-s.t. different_picks {m in MATCHES}:
-    chosen_match_1[m] + chosen_match_2[m] <= 1;
+# Matches in different rounds should not be the same
+#s.t. different_picks {m in MATCHES}:
+#    chosen_match_1[m] + chosen_match_2[m] <= 1;
 
 # At least 2 bookies per outcome after the first round
 s.t. minimum_bookies_per_option {m in MATCHES, o in OUTCOMES[m]}:
@@ -85,8 +95,8 @@ s.t. minimum_bookies_per_option {m in MATCHES, o in OUTCOMES[m]}:
 
 # We are bad at sports betting, so all outcomes should be leveled in
 # terms of winning.
-s.t. similar_profits {m in MATCHES, o in OUTCOMES[m], u in OUTCOMES[m]: o <> u}:
-    sum {b in BOOKIES} profit_2[b, m, o] - sum {b in BOOKIES} profit_2[b, m, u] <= profit_slack;
+#s.t. similar_profits {m in MATCHES, o in OUTCOMES[m], u in OUTCOMES[m]: o <> u}:
+#    sum {b in BOOKIES} profit_2[b, m, o] - sum {b in BOOKIES} profit_2[b, m, u] <= profit_slack;
 
 # There is a maximum amount we can deposit in each bookie (no more
 # bonus after that)
