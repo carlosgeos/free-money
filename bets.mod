@@ -43,20 +43,17 @@ maximize profit:
     sum {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]} profit_2[b, m, o];
 
 # Max values in each round
-s.t. r1 {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
-    money[b, m, o] * bonus_multiplier[b] * odds[b, m, o] = profit_1[b, m, o];
+s.t. first_bet {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    money[b, m, o] * bonus_multiplier[b] * odds[b, m, o] + money[b, m, o] * freebets_multiplier[b] = profit_1[b, m, o];
 
-s.t. fb {b in BOOKIES}:
-    (sum {m in MATCHES, o in OUTCOMES[m]} money[b, m, o]) * freebets_multiplier[b] = freebets[b];
-
-s.t. rbt {b in BOOKIES}:
-    rebet[b] <= (sum {m in MATCHES, o in OUTCOMES[m]} profit_1[b, m, o]) + freebets[b];
+# s.t. rbt {b in BOOKIES}:
+#     rebet[b] <= (sum {m in MATCHES, o in OUTCOMES[m]} profit_1[b, m, o]) + freebets[b];
 
 s.t. rbt2 {b in BOOKIES}:
-    sum {m in MATCHES, o in OUTCOMES[m]} rebet_allocation[b, m, o] <= rebet[b];
+    sum {m in MATCHES, o in OUTCOMES[m]} rebet_allocation[b, m, o] <= sum {m in MATCHES, o in OUTCOMES[m]} profit_1[b, m, o];
 
-s.t. r2 {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
-    (rebet_allocation[b, m, o] * odds[b, m, o]) - freebets[b] = profit_2[b, m, o];
+s.t. second_bet {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    (rebet_allocation[b, m, o] * odds[b, m, o]) = profit_2[b, m, o];
 
 # For the same bookie, betting on different outcomes is not possible
 s.t. first_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
@@ -68,26 +65,21 @@ s.t. second_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOM
 s.t. second_round_one_option_one_bookie_aux {b in BOOKIES}:
     sum {m in MATCHES, o in OUTCOMES[m]} chosen_2[b, m, o] = 1;
 
-s.t. asdf {m in MATCHES, o in OUTCOMES[m]}:
-    sum {b in BOOKIES} money[b, m, o] >= 10 * chosen_match_1[m];
-
-# s.t. qer {b in BOOKIES}:
-#     sum {m in MATCHES, o in OUTCOMES[m]} money[b, m, o] >= 10;
-
 # For the same bookie, even when different on the same outcome, only
 # one match should be chosen
 s.t. first_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
     money[b, m, o] <= chosen_match_1[m] * dummy_max;
 s.t. first_round_one_match_aux:
     sum {m in MATCHES} chosen_match_1[m] = 1;
-# s.t. second_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
-#     rebet[b, m, o] <= chosen_match_2[m] * dummy_max;
-# s.t. second_round_one_match_aux:
-#     sum {m in MATCHES} chosen_match_2[m] = 1;
+s.t. second_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    rebet_allocation[b, m, o] <= chosen_match_2[m] * dummy_max;
+s.t. second_round_one_match_aux:
+    sum {m in MATCHES} chosen_match_2[m] = 1;
+
 
 # Matches in different rounds should not be the same
-#s.t. different_picks {m in MATCHES}:
-#    chosen_match_1[m] + chosen_match_2[m] <= 1;
+s.t. different_picks {m in MATCHES}:
+    chosen_match_1[m] + chosen_match_2[m] <= 1;
 
 # At least 2 bookies per outcome after the first round
 s.t. minimum_bookies_per_option {m in MATCHES, o in OUTCOMES[m]}:
@@ -95,8 +87,8 @@ s.t. minimum_bookies_per_option {m in MATCHES, o in OUTCOMES[m]}:
 
 # We are bad at sports betting, so all outcomes should be leveled in
 # terms of winning.
-#s.t. similar_profits {m in MATCHES, o in OUTCOMES[m], u in OUTCOMES[m]: o <> u}:
-#    sum {b in BOOKIES} profit_2[b, m, o] - sum {b in BOOKIES} profit_2[b, m, u] <= profit_slack;
+s.t. similar_profits {m in MATCHES, o in OUTCOMES[m], u in OUTCOMES[m]: o <> u}:
+    sum {b in BOOKIES} profit_2[b, m, o] - sum {b in BOOKIES} profit_2[b, m, u] <= profit_slack;
 
 # There is a maximum amount we can deposit in each bookie (no more
 # bonus after that)
@@ -105,7 +97,10 @@ s.t. maximum_efficient_deposit {b in BOOKIES}:
 
 # Special conditions for bonuses. Minimum odds to bet on. Redundant if
 # check captures it, but will work when check is commented out.
-# s.t. bonus_condition1 {b in BOOKIES, o in OUTCOMES}: (if odds[i, j] < minimum_odds[i] then money[i, j] else 0) = 0;
+s.t. minimum_odds_condition1 {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    (if odds[b, m, o] < minimum_odds[b] then money[b, m, o] else 0) = 0;
+s.t. minimum_odds_condition2 {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    (if odds[b, m, o] < minimum_odds[b] then rebet_allocation[b, m, o] else 0) = 0;
 
 # Special condition to put some bookmaker in a group of N bookmakers
 # (might be useful to play with higher odds in a second round and

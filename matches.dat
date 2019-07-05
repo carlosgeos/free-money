@@ -26,7 +26,7 @@ param money_per_bookie :=
     Betway 100
     Bet777 300
     Napoleon 200
-    Circus 200
+    Circus 250
     Ladbrokes 200
     Unibet 50;
 
@@ -70,7 +70,7 @@ set OUTCOMES[NEDvsSWE] := R1 X R2;
 set OUTCOMES[CLBvsCHL] := R1 X R2;
 set OUTCOMES[KYRvsNAD] := R1 R2;
 
-param money_avail := 1270;
+param money_avail := 2000;
 
 param odds :=
 
