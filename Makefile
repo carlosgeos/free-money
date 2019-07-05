@@ -1,5 +1,11 @@
-SOLVER=BARON
+knitro:
+	python NeosClient.py build_xml --solver Knitro
+	python NeosClient.py neos_input.xml
 
-all:
-	python NeosClient.py build_xml --solver ${SOLVER}
+baron:
+	python NeosClient.py build_xml --solver BARON
+	python NeosClient.py neos_input.xml
+
+couenne:
+	python NeosClient.py build_xml --solver Couenne
 	python NeosClient.py neos_input.xml

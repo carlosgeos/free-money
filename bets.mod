@@ -1,137 +1,112 @@
-set Bookies;
-set Outcomes;
-set Matches;
+set BELGIAN_BOOKIES;
 
+param minimum_odds {BELGIAN_BOOKIES};
+param money_per_bookie {BELGIAN_BOOKIES};
+param bonus_multiplier {BELGIAN_BOOKIES};
+param freebets_multiplier {BELGIAN_BOOKIES};
+
+set BOOKIES within BELGIAN_BOOKIES;
+set MATCHES;
+set OUTCOMES {MATCHES};
+
+param odds {BOOKIES, m in MATCHES, OUTCOMES[m]};
 param money_avail;
 param dummy_max;
 param profit_slack;
-param odds {i in Bookies, j in Outcomes, m in Matches};
-param minimum_odds {i in Bookies};
-param bonuses {i in Bookies};
-param freebets_multiplier {i in Bookies};
-param money_per_bookie {i in Bookies};
 
-# Amount of real money in each bookie for each option
-var money {i in Bookies, j in Outcomes, m in Matches} >= 0;
-# Amount of money made for each option, for each bookie
-var profit_1 {i in Bookies, j in Outcomes, m in Matches};
-var freebets {i in Bookies};
-var rebet {i in Bookies, j in Outcomes, m in Matches};
-var profit_2 {i in Bookies, j in Outcomes, m in Matches};
+var money {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
+var profit_1 {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
+var freebets {BOOKIES} >= 0;
+var rebet {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
+var profit_2 {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
 
 # Auxiliary variables to create Special Ordered Sets 1 (at most one
 # value can be non-zero)
-var chosen_1 {i in Bookies, j in Outcomes, m in Matches} binary;
-var chosen_2 {i in Bookies, j in Outcomes, m in Matches} binary;
-var chosen_match_1 {m in Matches} binary;
-var chosen_match_2 {m in Matches} binary;
+var chosen_1 {BOOKIES, m in MATCHES, OUTCOMES[m]} binary;
+var chosen_2 {BOOKIES, m in MATCHES, OUTCOMES[m]} binary;
+var chosen_match_1 {MATCHES} binary;
+var chosen_match_2 {MATCHES} binary;
 
 ##########
 # Checks #
 ##########
 
 ### These might change with time ###
-# check {i in Bookies, j in Outcomes, m in Matches}: odds[i, j, m] > minimum_odds[i], = 0;
+# check {b in BOOKIES, o in OUTCOMES, m in MATCHES}: odds[i, j, m] > minimum_odds[i], = 0;
 
 ######################
 # Objective function #
 ######################
 
 maximize profit:
-    sum {i in Bookies, j in Outcomes, m in Matches} profit_2[i, j, m];
+    sum {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]} profit_2[b, m, o];
 
 # Max values in each round
-s.t. r1 {i in Bookies, j in Outcomes, m in Matches}:
-    money[i, j, m] * bonuses[i] * odds[i, j, m] = profit_1[i, j, m];
+s.t. r1 {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    money[b, m, o] * bonus_multiplier[b] * odds[b, m, o] = profit_1[b, m, o];
 
-s.t. fb {i in Bookies}:
-    sum {j in Outcomes, m in Matches} money[i, j, m] * freebets_multiplier[i] = freebets[i];
+s.t. fb {b in BOOKIES}:
+    sum {m in MATCHES, o in OUTCOMES[m]} money[b, m, o] * freebets_multiplier[b] = freebets[b];
 
-s.t. rbt {i in Bookies, j in Outcomes, m in Matches}:
-    rebet[i, j, m] = profit_1[i, j, m] + freebets[i];
+s.t. rbt {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    rebet[b, m, o] = profit_1[b, m, o] + freebets[b];
 
-s.t. r2 {i in Bookies, j in Outcomes, m in Matches}:
-    profit_1[i, j, m] * odds[i, j, m] + freebets[i] * odds[i, j, m] - freebets[i] = profit_2[i, j, m];
+s.t. r2 {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    rebet[b, m, o] * odds[b, m, o] - freebets[b] = profit_2[b, m, o];
 
 # For the same bookie, betting on different outcomes is not possible
-s.t. one_option_one_bookie {i in Bookies, j in Outcomes, m in Matches}:
-    money[i, j, m] <= chosen_1[i, j, m] * dummy_max;
-s.t. one_option_one_bookie_aux {i in Bookies}:
-    sum {j in Outcomes, m in Matches} chosen_1[i, j, m] = 1;
+s.t. first_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    money[b, m, o] <= chosen_1[b, m, o] * dummy_max;
+s.t. first_round_one_option_one_bookie_aux {b in BOOKIES}:
+    sum {m in MATCHES, o in OUTCOMES[m]} chosen_1[b, m, o] = 1;
+s.t. second_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    rebet[b, m, o] <= chosen_2[b, m, o] * dummy_max;
+s.t. second_round_one_option_one_bookie_aux {b in BOOKIES}:
+    sum {m in MATCHES, o in OUTCOMES[m]} chosen_2[b, m, o] = 1;
 
-s.t. second_round_one_option_one_bookie {i in Bookies, j in Outcomes, m in Matches}:
-    rebet[i, j, m] <= chosen_2[i, j, m] * dummy_max;
-s.t. second_round_one_option_one_bookie_aux {i in Bookies}:
-    sum {j in Outcomes, m in Matches} chosen_2[i, j, m] = 1;
-
-# We can only go for one match at a time
-s.t. first_betting_round_one_match {i in Bookies, j in Outcomes, m in Matches}:
-    money[i, j, m] <= chosen_match_1[m] * dummy_max;
+# For the same bookie, even when different on the same outcome, only
+# one match should be chosen
+s.t. first_betting_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
+    money[b, m, o] <= chosen_match_1[m] * dummy_max;
 s.t. first_betting_round_one_match_aux:
-    sum {m in Matches} chosen_match_1[m] = 1;
-s.t. second_betting_round_one_match {i in Bookies, j in Outcomes, m in Matches}:
-    rebet[i, j, m] <= chosen_match_2[m] * dummy_max;
-s.t. second_betting_round_one_match_aux:
-    sum {m in Matches} chosen_match_2[m] = 1;
+    sum {m in MATCHES} chosen_match_1[m] = 1;
+# s.t. second_betting_round_one_match {b in BOOKIES, o in OUTCOMES, m in MATCHES}:
+#     rebet[b, m, o] <= chosen_match_2[m] * dummy_max;
+# s.t. second_betting_round_one_match_aux:
+#     sum {m in MATCHES} chosen_match_2[m] = 1;
 
-# At least 2 bookies per option after the first round
-s.t. minimum_bookies_per_option {j in Outcomes}:
-    sum {i in Bookies, m in Matches} chosen_1[i, j, m] >= 2;
+# MATCHES in different rounds should not be the same
+s.t. different_picks {m in MATCHES}:
+    chosen_match_1[m] + chosen_match_2[m] <= 1;
 
-# Matches in different rounds should not be the same
-s.t. different_picks {m in Matches}: chosen_match_1[m] + chosen_match_2[m] <= 1;
+# At least 2 bookies per outcome after the first round
+s.t. minimum_bookies_per_option {m in MATCHES, o in OUTCOMES[m]}:
+    sum {b in BOOKIES} chosen_1[b, m, o] >= 2 * chosen_match_1[m];
 
 # We are bad at sports betting, so all outcomes should be leveled in
 # terms of winning.
-s.t. similar_profits_on_each_outcome {j in Outcomes, k in Outcomes: k <> j}:
-    sum {i in Bookies, m in Matches} profit_2[i, j, m] - sum {i in Bookies, m in Matches} profit_2[i, k, m] <= profit_slack;
-#s.t. similar_profits_on_each_bookie {i in Bookies, k in Bookies: i <> k}: sum {j in Outcomes} max_profit[i, j] - sum {j in Outcomes} max_profit[k, j] <= bookie_profit_slack;
-
-# <= bookie_profit_slack, >= -bookie_profit_slack;
-# s.t. similar_profits_among_bookies_of_same_outcome {j in Outcomes, i in Bookies, k in Bookies: i <> k}: max_profit[i, j] - max_profit[k, j]
+s.t. similar_profits {m in MATCHES, o in OUTCOMES[m], u in OUTCOMES[m]: o <> u}:
+    sum {b in BOOKIES} profit_2[b, m, o] - sum {b in BOOKIES} profit_2[b, m, u] <= profit_slack;
 
 # There is a maximum amount we can deposit in each bookie (no more
 # bonus after that)
-s.t. maximum_efficient_deposit {i in Bookies}:
-    sum {j in Outcomes, m in Matches} money[i, j, m] <= money_per_bookie[i];
-
-# There is a maximum amount we can rebet on each bookie
-#s.t. maximum_rebet_money {}
+s.t. maximum_efficient_deposit {b in BOOKIES}:
+    sum {m in MATCHES, o in OUTCOMES[m]} money[b, m, o] <= money_per_bookie[b];
 
 # Special conditions for bonuses. Minimum odds to bet on. Redundant if
 # check captures it, but will work when check is commented out.
-# s.t. bonus_condition1 {i in Bookies, j in Outcomes}: (if odds[i, j] < minimum_odds[i] then money[i, j] else 0) = 0;
+# s.t. bonus_condition1 {b in BOOKIES, o in OUTCOMES}: (if odds[i, j] < minimum_odds[i] then money[i, j] else 0) = 0;
 
 # Special condition to put some bookmaker in a group of N bookmakers
 # (might be useful to play with higher odds in a second round and
 # fulfill the bonus conditions)
-# s.t. bookie_grouping {i in Bookies, j in Outcomes}: sum {i in Bookies} chosen[i, j] >= max {i in Bookies: } grouping[i];
+# s.t. bookie_grouping {b in BOOKIES, o in OUTCOMES}: sum {b in BOOKIES} chosen[i, j] >= max {b in BOOKIES: } grouping[i];
 
 # Total money available
 s.t. total_money:
-    sum {i in Bookies, j in Outcomes, m in Matches} money[i, j, m] <= money_avail;
+    sum {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]} money[b, m, o] <= money_avail;
 
 
 ##########################
 # Post processing checks #
 ##########################
-
-# check
-
-# printf 'Starting money: %.2f\n', money_avail;
-# printf 'Money used: %.2f\n\n', sum {i in Bookies, j in Outcomes, m in Matches} money[i, j, m];
-
-# printf 'Total after first bet: %.2f\n', sum {i in Bookies, j in Outcomes, m in Matches} profit_1[i, j, m];
-# printf {j in Outcomes, m in Matches}: 'Total for %s = %.2f\n', j, sum{i in Bookies} profit_1[i, j, m];
-# printf '\n';
-
-# for {j in Outcomes}{
-#     printf 'Bookiesookies on %s:\n' , j;
-#     for {i in Bookies: money[i, j] > 0} {
-#         printf '%s ', i;
-#     }
-# #    printf ''
-#     printf '\n\n';
-# }
-
-# printf {i in Bookies, j in Outcomes: money[i, j] <> 0}: 'Money on %10s for %2s: \t%6.2fe | Profit: %6.2fe\n', i, j, money[i, j], max_profit[i, j];
