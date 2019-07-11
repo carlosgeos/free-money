@@ -10,9 +10,9 @@ set MATCHES;
 set OUTCOMES {MATCHES};
 
 param odds {BOOKIES, m in MATCHES, OUTCOMES[m]};
-param money_avail;
-param dummy_max;
-param profit_slack;
+param money_avail integer;
+param dummy_max integer;
+param profit_slack integer;
 
 var money {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
 var profit_1 {BOOKIES, m in MATCHES, OUTCOMES[m]} >= 0;
@@ -27,6 +27,7 @@ var chosen_1 {BOOKIES, m in MATCHES, OUTCOMES[m]} binary;
 var chosen_2 {BOOKIES, m in MATCHES, OUTCOMES[m]} binary;
 var chosen_match_1 {MATCHES} binary;
 var chosen_match_2 {MATCHES} binary;
+var chosen_link {BOOKIES, m in MATCHES, OUTCOMES[m], M in MATCHES, O in OUTCOMES[M]} binary;
 
 ##########
 # Checks #
@@ -53,7 +54,22 @@ s.t. rbt2 {b in BOOKIES}:
     sum {m in MATCHES, o in OUTCOMES[m]} rebet_allocation[b, m, o] <= sum {m in MATCHES, o in OUTCOMES[m]} profit_1[b, m, o];
 
 s.t. second_bet {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
-    (rebet_allocation[b, m, o] * odds[b, m, o]) = profit_2[b, m, o];
+    rebet_allocation[b, m, o] * odds[b, m, o] = profit_2[b, m, o];
+
+s.t. link {m in MATCHES, o in OUTCOMES[m], M in MATCHES: m <> M}:
+    (sum {b in BOOKIES} chosen_1[b, m, o]) >= card(OUTCOMES[M]) * chosen_match_2[M] * chosen_match_1[m];
+
+# s.t. asdfqwer {m in MATCHES, M in MATCHES}:
+
+s.t. asdf {m in MATCHES, M in MATCHES: m <> M}:
+    sum {b in BOOKIES, o in OUTCOMES[m], O in OUTCOMES[M]} chosen_link[b, m, o, M, O] = 1;
+
+s.t. qwer {b in BOOKIES, m in MATCHES, o in OUTCOMES[m], M in MATCHES, O in OUTCOMES[M]}:
+    money[b, m, o] <= chosen_link[b, m, o, M, O] * dummy_max;
+
+s.t. qwert {b in BOOKIES, m in MATCHES, o in OUTCOMES[m], M in MATCHES, O in OUTCOMES[M]}:
+    rebet_allocation[b, M, O] <= chosen_link[b, m, o, M, O] * dummy_max;
+
 
 # For the same bookie, betting on different outcomes is not possible
 s.t. first_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOMES[m]}:
