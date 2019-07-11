@@ -63,12 +63,10 @@ param dummy_max := 10000;
 # Variable stuff #
 ##################
 
-set BOOKIES := betFIRST Bingoal Bwin Betway Bet777 Napoleon Ladbrokes Circus;
+set BOOKIES := betFIRST Bingoal Bwin Betway Bet777 Napoleon Ladbrokes Circus Unibet;
 
 set MATCHES := NEDvsSWE CLBvsCHL KYRvsNAD;
-set OUTCOMES[NEDvsSWE] := R1 X R2;
-set OUTCOMES[CLBvsCHL] := R1 X R2;
-set OUTCOMES[KYRvsNAD] := R1 R2;
+set OUTCOMES := R1 X R2;
 
 param money_avail := 2000;
 
@@ -83,6 +81,7 @@ param odds :=
     Napoleon    2.30    3.25    3.20
     Circus      2.25    3.15    3.15
     Ladbrokes   2.25    3.00    3.20
+    Unibet      2.25    3.00    3.20
 
 [*, CLBvsCHL, *]: R1       X      R2  :=
     betFIRST    2.20    3.15    3.70
@@ -93,15 +92,17 @@ param odds :=
     Napoleon    2.18    3.10    3.70
     Circus      2.18    3.10    3.70
     Ladbrokes   2.111   3.10    3.50
+    Unibet      2.111   3.10    3.50
 
-[*, KYRvsNAD, *]:  R1        R2  :=
-    betFIRST     2.20      1.70
-    Bingoal      2.20      1.75
-    Bwin         2.20      1.60
-    Betway       2.15      1.60
-    Bet777       2.15      1.65
-    Napoleon     2.18      1.70
-    Circus       2.18      1.70
-    Ladbrokes    2.111     1.50;
+[*, KYRvsNAD, *]:  R1      X      R2  :=
+    betFIRST     2.20      0    1.70
+    Bingoal      2.20      0    1.75
+    Bwin         2.20      0    1.60
+    Betway       2.15      0    1.60
+    Bet777       2.15      0    1.65
+    Napoleon     2.18      0    1.70
+    Circus       2.18      0    1.70
+    Ladbrokes    2.111     0    1.50
+    Unibet       2.111     0    1.50;
 
 param profit_slack := 400;
