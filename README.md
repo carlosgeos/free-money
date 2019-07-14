@@ -18,5 +18,5 @@ where `<solver_name>` is one of `Couenne|Knitro|BARON`
 or just:
 
 ```sh
-$ make
+$ make baron
 ```

@@ -36,7 +36,7 @@ param bonus_multiplier :=
     Bwin 2
     Betway 2
     Bet777 1.5
-    Napoleon 3
+    Napoleon 2
     Circus 1
     Ladbrokes 1
     Unibet 2;
@@ -56,7 +56,7 @@ param freebets_multiplier :=
 # Model settings #
 ##################
 
-param dummy_max := 10000;
+param dummy_max := 50000;
 
 
 ##################

@@ -1,6 +1,6 @@
 glpk:
 	python scripts/glpk_build.py
-	glpsol --math glpk_input.mod -d matches.dat
+	glpsol --math glpk_input.mod -d matches.dat --output solution.txt
 
 knitro:
 	python scripts/neos_build.py Knitro
