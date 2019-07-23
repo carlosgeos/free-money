@@ -29,6 +29,8 @@ var chosen_match_2 {MATCHES} binary;
 var chosen_outcome_1 {BOOKIES, OUTCOMES} binary;
 var chosen_outcome_2 {BOOKIES, OUTCOMES} binary;
 
+var path {OUTCOMES, MATCHES} binary;
+
 ##########
 # Checks #
 ##########
@@ -63,50 +65,39 @@ s.t. available_after_first_bet {b in BOOKIES}:
 s.t. second_bet {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
     rebet_allocation[b, m, o] * odds[b, m, o] - freebets[b] = profit_2[b, m, o];
 
-# In the first bet, the number of chosen bookies per outcome should be
-# at least the number of possible outcomes of the second chosen
-# match. Non linear constraint.
-s.t. link {m in MATCHES, o in OUTCOMES, M in MATCHES: m <> M}:
-    (sum {b in BOOKIES} chosen_1[b, m, o]) >= card({O in OUTCOMES: sum {b in BOOKIES} odds[b, M, O] <> 0}) * chosen_match_2[M] * chosen_match_1[m];
-
-# No two bookies should choose the same two outcomes in the different matches
-s.t. bookies_choose_all_possible_outcomes {b in BOOKIES, o in OUTCOMES, B in BOOKIES, O in OUTCOMES: b <> B}:
-    chosen_outcome_1[b, o] + chosen_outcome_1[B, o] + chosen_outcome_2[b, O] + chosen_outcome_2[B, O] <= 3;
-
-s.t. bookies_choose_all_possible_outcomes_2 {b in BOOKIES, o in OUTCOMES}:
-    sum {m in MATCHES} money[b, m, o] <= chosen_outcome_1[b, o] * dummy_max;
-
-s.t. bookies_choose_all_possible_outcomes_3 {b in BOOKIES, O in OUTCOMES}:
-    sum {m in MATCHES} rebet_allocation[b, m, O] <= chosen_outcome_2[b, O] * dummy_max;
+##########################
+# Constraints, first bet #
+##########################
 
 # For the same bookie, betting on different outcomes is not possible
 s.t. first_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
     money[b, m, o] <= chosen_1[b, m, o] * dummy_max;
 s.t. first_round_one_option_one_bookie_aux {b in BOOKIES}:
     sum {m in MATCHES, o in OUTCOMES} chosen_1[b, m, o] = 1;
+
+# For the same bookie only one match should be chosen
+s.t. first_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
+    money[b, m, o] <= chosen_match_1[m] * dummy_max;
+s.t. first_round_one_match_aux:
+    sum {m in MATCHES} chosen_match_1[m] = 1;
+
+###########################
+# Constraints, second bet #
+###########################
+
 s.t. second_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
     rebet_allocation[b, m, o] <= chosen_2[b, m, o] * dummy_max;
 s.t. second_round_one_option_one_bookie_aux {b in BOOKIES}:
     sum {m in MATCHES, o in OUTCOMES} chosen_2[b, m, o] = 1;
 
-# For the same bookie, even when different on the same outcome, only
-# one match should be chosen
-s.t. first_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
-    money[b, m, o] <= chosen_match_1[m] * dummy_max;
-s.t. first_round_one_match_aux:
-    sum {m in MATCHES} chosen_match_1[m] = 1;
-s.t. second_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
-    rebet_allocation[b, m, o] <= chosen_match_2[m] * dummy_max;
-s.t. second_round_one_match_aux:
-    sum {m in MATCHES} chosen_match_2[m] = 1;
+# s.t. second_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
+#     rebet_allocation[b, m, o] <= chosen_match_2[m] * dummy_max;
+# s.t. second_round_one_match_aux:
+#     sum {m in MATCHES} chosen_match_2[m] = 1;
 
 # Matches in different rounds should not be the same
 s.t. different_picks {m in MATCHES}:
     chosen_match_1[m] + chosen_match_2[m] <= 1;
-
-# At least 2 bookies per outcome after the first round
-s.t. minimum_bookies_per_option {m in MATCHES, o in OUTCOMES}:
-    sum {b in BOOKIES} chosen_1[b, m, o] >= 2 * chosen_match_1[m];
 
 # We are bad at sports betting, so all outcomes should be leveled in
 # terms of winning.
