@@ -1,19 +1,7 @@
-glpk:
-	python scripts/glpk_build.py
-	glpsol --math glpk_input.mod -d matches.dat --output solution.txt
+glpk: solution.txt
 
-knitro:
-	python scripts/neos_build.py Knitro
-	python scripts/NeosClient.py neos_input.xml
+solution.txt: glpk_input.mod
+	glpsol --pcost --math glpk_input.mod -d data/matches.dat --output solution.txt
 
-baron:
-	python scripts/neos_build.py BARON
-	python scripts/NeosClient.py neos_input.xml
-
-couenne:
-	python scripts/neos_build.py Couenne
-	python scripts/NeosClient.py neos_input.xml
-
-mosek:
-	python scripts/neos_build.py MOSEK
-	python scripts/NeosClient.py neos_input.xml
+glpk_input.mod: bets.mod solver.run
+	cat bets.mod solver.run > glpk_input.mod

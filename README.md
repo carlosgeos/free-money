@@ -1,22 +1,24 @@
 # Free Money
 
+Optimal matched betting using freebets.
+
+**UPDATE:** On September 2024 Belgium tightened its ban on gambling advertising, which included sign up bonuses and freebets. However Belgian bookies are used in this example WLOG, since any bookie offering freebets is valid. The freebet amounts were real numbers I gathered back in 2019.
+
 ## Usage
 
-The NEOS Server provides access to commercial/proprietary solvers
-(Artelys Knitro, BARON, etc) through its web interface or the XML-RPC
-interface (the one used in this case). `NeosClient.py` contains a
-small client to communicate with the server, send the model and data
-files, and receive a response.
+Install `glpk` and:
 
 ```sh
-$ python NeosClient.py build_xml <solver_name>
-$ python NeosClient.py neos_input.xml
+$ make
 ```
 
-where `<solver_name>` is one of `Couenne|Knitro|BARON`
+## Features
 
-or just:
+- Up to `N` different bookies can be chosen. Each offering a freebet of up to `f`.
+- `f` can be zero: a bookie that isn't offering freebets could have great odds and still be useful (betting with cash).
+- Qualifying bets (cash) and freebets can have a minimum odds constraint.
 
-```sh
-$ make baron
-```
+## Not implemented
+
+- Sign up bonuses (with rollovers).
+- Other convoluted incentive programs that bookies sometimes come up with.

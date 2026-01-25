@@ -1,0 +1,115 @@
+##################
+# Model settings #
+##################
+
+# Big M, but not too big
+param dummy_max := 2000;
+
+# A tolerance value allowing slight differences in profit between
+# scenarios.
+param profit_slack := 200;
+
+####################
+# Bookies settings #
+####################
+
+set BOOKIES := betFIRST Bingoal Bwin Betway Bet777 Napoleon Ladbrokes Circus Unibet;
+
+param minimum_odds :=
+    betFIRST 1.4
+    Bingoal 1.4
+    Bwin 1.4
+    Betway 1.75
+    Bet777 2.0
+    Napoleon 2.0
+    Circus 1.6
+    Ladbrokes 1.0
+    Unibet 1.0;
+
+param minimum_odds_freebet :=
+    betFIRST 1.4
+    Bingoal 1.4
+    Bwin 1.4
+    Betway 1.75
+    Bet777 2.0
+    Napoleon 2.0
+    Circus 1.6
+    Ladbrokes 1.0
+    Unibet 1.0;
+
+param max_freebet :=
+    betFIRST 200
+    Bingoal 100
+    Bwin 120
+    Betway 100
+    Bet777 300
+    Napoleon 200
+    Circus 250
+    Ladbrokes 200
+    Unibet 50;
+
+##################
+# Odds and cash  #
+##################
+
+param initial_cash := 2000;
+
+set MARKETS := NEDvsSWE CLBvsCHL Brugge-OM Cork-Bohemians MCity-Galatasaray;
+set OUTCOMES := U1 X U2;
+
+param odds :=
+    [*, NEDvsSWE, *]: U1       X      U2  :=
+        betFIRST    2.20    3.15    3.25
+        Bingoal     2.30    3.15    3.25
+        Bwin        2.35    3.10    3.00
+        Betway      2.30    3.10    3.30
+        Bet777      2.20    3.10    3.20
+        Napoleon    2.30    3.25    3.20
+        Circus      2.25    3.15    3.15
+        Ladbrokes   2.25    3.00    3.20
+        Unibet      2.25    3.00    3.20
+
+    # [*, CLBvsCHL, *]: U1       X      U2  :=
+    #     betFIRST    2.20    3.15    3.70
+    #     Bingoal     2.20    3.10    3.75
+    #     Bwin        2.20    3.10    3.60
+    #     Betway      2.15    3.20    3.60
+    #     Bet777      2.15    3.10    3.65
+    #     Napoleon    2.18    3.10    3.70
+    #     Circus      2.18    3.10    3.70
+    #     Ladbrokes   2.111   3.10    3.50
+    #     Unibet      2.111   3.10    3.50
+
+    [*, Brugge-OM, *]:  U1      X      U2  :=
+        betFIRST      2.60   3.60    2.45
+        Bingoal       2.65   3.30    2.35
+        Bwin          2.65   3.90    2.40
+        Betway        2.63   3.85    2.35
+        Bet777        2.63   3.60    2.30
+        Napoleon      2.70   3.65    2.45
+        Circus        2.65   3.70    2.45
+        Ladbrokes     2.66   3.60    2.45
+        Unibet        2.63   3.30    2.55
+
+    # [*, Cork-Bohemians, *]:  U1       X      U2  :=
+    #     betFIRST           3.00    3.15    2.40
+    #     Bingoal            2.90    2.90    2.35
+    #     Bwin               2.95    3.10    2.30
+    #     Bet777             3.00    3.10    2.40
+    #     Betway             3.00    3.10    2.40
+    #     Napoleon           3.10    3.15    2.25
+    #     Circus             3.05    3.05    2.37
+    #     Ladbrokes          3.00    2.90    2.40
+    #     Unibet             3.15    3.20    2.25
+
+
+    [*, MCity-Galatasaray, *]:  U1      X       U2  :=
+        betFIRST              1.22   6.40    11.00
+        Bingoal               1.22   5.50     9.00
+        Bwin                  1.22   6.75    12.25
+        Betway                1.22   6.00     9.50
+        Bet777                1.25   6.75    11.00
+        Napoleon              1.27   6.25     9.50
+        Circus                1.22   6.66    11.00
+        Ladbrokes             1.22   6.00    12.00
+        Unibet                1.21   6.75    12.50;
