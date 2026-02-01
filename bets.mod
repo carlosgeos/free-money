@@ -1,126 +1,180 @@
-set BELGIAN_BOOKIES;
-
-param minimum_odds {BELGIAN_BOOKIES};
-param money_per_bookie {BELGIAN_BOOKIES};
-param bonus_multiplier {BELGIAN_BOOKIES};
-param freebets_multiplier {BELGIAN_BOOKIES};
-
-set BOOKIES within BELGIAN_BOOKIES;
-set MATCHES;
+set BOOKIES;
+set MARKETS;
 set OUTCOMES;
 
-param odds {BOOKIES, MATCHES, OUTCOMES};
-param money_avail integer;
-param dummy_max integer;
-param profit_slack integer;
+param minimum_odds {BOOKIES};
+param minimum_odds_freebet {BOOKIES} default 1.0;
+param max_freebet {BOOKIES};
+param freebet_snr {BOOKIES} binary default 1;  # 1 = stake not returned, 0 = stake returned
 
-var money {BOOKIES, MATCHES, OUTCOMES} >= 0;
-var profit_1 {BOOKIES, MATCHES, OUTCOMES} >= 0;
-var freebets {BOOKIES} >= 0;
-var rebet_allocation {BOOKIES, MATCHES, OUTCOMES} >= 0;
-var profit_2 {BOOKIES, MATCHES, OUTCOMES};
+param odds {BOOKIES, MARKETS, OUTCOMES} default 0;
 
-# Auxiliary variables to create Special Ordered Sets 1 (at most one
-# value can be non-zero)
-var chosen_1 {BOOKIES, MATCHES, OUTCOMES} binary;
-var chosen_2 {BOOKIES, MATCHES, OUTCOMES} binary;
-var chosen_match_1 {MATCHES} binary;
-var chosen_match_2 {MATCHES} binary;
-var chosen_outcome_1 {BOOKIES, OUTCOMES} binary;
-var chosen_outcome_2 {BOOKIES, OUTCOMES} binary;
+param initial_cash >= 0;
+param dummy_max    >= 0;
+param profit_slack >= 0 default 300;
 
-var path {OUTCOMES, MATCHES} binary;
+# ----------------
+# Decision vars
+# ----------------
+var bookie_selected {b in BOOKIES} binary;
 
-##########
-# Checks #
-##########
+# Round 1
+var chosen_market_1 {m in MARKETS} binary;
+var chosen_1 {b in BOOKIES, m in MARKETS, o in OUTCOMES} binary;
+var first_round_bet {b in BOOKIES, m in MARKETS, o in OUTCOMES} >= 0;
 
-### These might change with time ###
-# check {b in BOOKIES, o in OUTCOMES, m in MATCHES}: odds[i, j, m] > minimum_odds[i], = 0;
+# Earned freebet amount at each bookie (capped)
+var freebets {b in BOOKIES} >= 0;
 
-######################
-# Objective function #
-######################
+# Round 2 is recourse: depends on which outcome o1 won in round 1
+var chosen_market_2 {o1 in OUTCOMES, m in MARKETS} binary;
+var chosen_2 {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES} binary;
 
-maximize profit:
-    sum {b in BOOKIES, m in MATCHES, o in OUTCOMES} profit_2[b, m, o];
+var rebet_cash    {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES} >= 0;
+var rebet_freebet {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES} >= 0;
 
-###############
-# Constraints #
-###############
+# Derived total bet in round 2 (optional, but handy)
+var second_round_bet {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES} >= 0;
 
-# Real money to use on each bookie, for which match and for which outcome
-s.t. first_bet {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
-    money[b, m, o] * bonus_multiplier[b] * odds[b, m, o] = profit_1[b, m, o];
+# Path profit
+var path_profit {o1 in OUTCOMES, o2 in OUTCOMES};
 
-# After the first bet, some bookies give out freebets
-s.t. freebets_calc {b in BOOKIES}:
-    (sum {m in MATCHES, o in OUTCOMES} money[b, m, o]) * freebets_multiplier[b] = freebets[b];
+# Maximin objective helpers
+var min_profit;
+var max_profit;
 
-# Total available to rebet
-s.t. available_after_first_bet {b in BOOKIES}:
-    sum {m in MATCHES, o in OUTCOMES} rebet_allocation[b, m, o] <= sum {m in MATCHES, o in OUTCOMES} profit_1[b, m, o] + freebets[b];
+# ----------------
+# Objective
+# ----------------
+maximize profit: min_profit;
 
-# Rebet allocation
-s.t. second_bet {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
-    rebet_allocation[b, m, o] * odds[b, m, o] - freebets[b] = profit_2[b, m, o];
+# ----------------
+# ROUND 1 constraints
+# ----------------
+# One market for round 1
+s.t. one_market_round1:
+    sum {m in MARKETS} chosen_market_1[m] = 1;
 
-##########################
-# Constraints, first bet #
-##########################
+# If a bet is placed it must be on the chosen market and selected bookie
+s.t. r1_market_link {b in BOOKIES, m in MARKETS, o in OUTCOMES}:
+    first_round_bet[b,m,o] <= chosen_market_1[m] * dummy_max;
 
-# For the same bookie, betting on different outcomes is not possible
-s.t. first_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
-    money[b, m, o] <= chosen_1[b, m, o] * dummy_max;
-s.t. first_round_one_option_one_bookie_aux {b in BOOKIES}:
-    sum {m in MATCHES, o in OUTCOMES} chosen_1[b, m, o] = 1;
+s.t. r1_selected_link {b in BOOKIES, m in MARKETS, o in OUTCOMES}:
+    first_round_bet[b,m,o] <= bookie_selected[b] * dummy_max;
 
-# For the same bookie only one match should be chosen
-s.t. first_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
-    money[b, m, o] <= chosen_match_1[m] * dummy_max;
-s.t. first_round_one_match_aux:
-    sum {m in MATCHES} chosen_match_1[m] = 1;
+# At most one (market,outcome) per bookie in round 1 (but can also sit out)
+s.t. r1_one_choice_per_bookie {b in BOOKIES}:
+    sum {m in MARKETS, o in OUTCOMES} chosen_1[b,m,o] <= 1;
 
-###########################
-# Constraints, second bet #
-###########################
+s.t. r1_choice_implies_bet {b in BOOKIES, m in MARKETS, o in OUTCOMES}:
+    first_round_bet[b,m,o] <= chosen_1[b,m,o] * dummy_max;
 
-s.t. second_round_one_option_one_bookie {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
-    rebet_allocation[b, m, o] <= chosen_2[b, m, o] * dummy_max;
-s.t. second_round_one_option_one_bookie_aux {b in BOOKIES}:
-    sum {m in MATCHES, o in OUTCOMES} chosen_2[b, m, o] = 1;
+# Total cash used in round 1 cannot exceed initial cash
+s.t. cash_budget_round1:
+    sum {b in BOOKIES, m in MARKETS, o in OUTCOMES} first_round_bet[b,m,o] <= initial_cash;
 
-# s.t. second_round_one_match {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
-#     rebet_allocation[b, m, o] <= chosen_match_2[m] * dummy_max;
-# s.t. second_round_one_match_aux:
-#     sum {m in MATCHES} chosen_match_2[m] = 1;
+# Minimum odds / zero odds guards (round 1)
+s.t. r1_min_odds_block {b in BOOKIES, m in MARKETS, o in OUTCOMES :
+        odds[b,m,o] > 0 && odds[b,m,o] < minimum_odds[b]}:
+    first_round_bet[b,m,o] = 0;
 
-# Matches in different rounds should not be the same
-s.t. different_picks {m in MATCHES}:
-    chosen_match_1[m] + chosen_match_2[m] <= 1;
+s.t. r1_zero_odds_block {b in BOOKIES, m in MARKETS, o in OUTCOMES :
+        odds[b,m,o] = 0}:
+    first_round_bet[b,m,o] = 0;
 
-# We are bad at sports betting, so all outcomes should be leveled in
-# terms of winning.
-s.t. similar_profits {m in MATCHES, o in OUTCOMES, O in OUTCOMES: o <> O and sum {b in BOOKIES} odds[b, m, o] <> 0 and sum {b in BOOKIES} odds[b, m, O] <> 0}:
-    sum {b in BOOKIES} profit_2[b, m, o] - sum {b in BOOKIES} profit_2[b, m, O] <= profit_slack;
+# Freebet earned: <= qualifying stake, <= cap, and 0 if bookie not selected
+s.t. freebet_le_stake {b in BOOKIES}:
+    freebets[b] <= sum {m in MARKETS, o in OUTCOMES} first_round_bet[b,m,o];
 
-# There is a maximum amount we can deposit in each bookie (no more
-# bonus after that)
-s.t. maximum_efficient_deposit {b in BOOKIES}:
-    sum {m in MATCHES, o in OUTCOMES} money[b, m, o] <= money_per_bookie[b];
+s.t. freebet_le_cap {b in BOOKIES}:
+    freebets[b] <= max_freebet[b];
 
-# Special conditions for bonuses. Minimum odds to bet on. Redundant if
-# check captures it, but will work when check is commented out.
-s.t. minimum_odds_condition1 {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
-    (if odds[b, m, o] < minimum_odds[b] then money[b, m, o] else 0) = 0;
-s.t. minimum_odds_condition2 {b in BOOKIES, m in MATCHES, o in OUTCOMES}:
-    (if odds[b, m, o] < minimum_odds[b] then rebet_allocation[b, m, o] else 0) = 0;
+s.t. freebet_only_if_selected {b in BOOKIES}:
+    freebets[b] <= bookie_selected[b] * max_freebet[b];
 
-# Total money available
-s.t. total_money:
-    sum {b in BOOKIES, m in MATCHES, o in OUTCOMES} money[b, m, o] <= money_avail;
+# -------------------
+# ROUND 2 constraints
+# -------------------
+# Define total bet
+s.t. r2_total_def {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES}:
+    second_round_bet[o1,b,m,o] = rebet_cash[o1,b,m,o] + rebet_freebet[o1,b,m,o];
 
+# One market for round 2 (for each o1 scenario)
+s.t. one_market_round2 {o1 in OUTCOMES}:
+    sum {m in MARKETS} chosen_market_2[o1,m] = 1;
 
-##########################
-# Post processing checks #
-##########################
+# Round 2 market must be different from Round 1 market
+s.t. r2_different_market {o1 in OUTCOMES, m in MARKETS}:
+    chosen_market_1[m] + chosen_market_2[o1,m] <= 1;
+
+# Link to chosen market and selected bookies
+s.t. r2_market_link {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES}:
+    second_round_bet[o1,b,m,o] <= chosen_market_2[o1,m] * dummy_max;
+
+s.t. r2_selected_link {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES}:
+    second_round_bet[o1,b,m,o] <= bookie_selected[b] * dummy_max;
+
+# At most one outcome per bookie in round 2 (per scenario), can sit out
+s.t. r2_one_choice_per_bookie {o1 in OUTCOMES, b in BOOKIES}:
+    sum {m in MARKETS, o in OUTCOMES} chosen_2[o1,b,m,o] <= 1;
+
+s.t. r2_choice_implies_bet {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES}:
+    second_round_bet[o1,b,m,o] <= chosen_2[o1,b,m,o] * dummy_max;
+
+# Odds guards round 2 (cash + freebet)
+s.t. r2_min_odds_block {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES :
+        odds[b,m,o] > 0 && odds[b,m,o] < minimum_odds[b]}:
+    second_round_bet[o1,b,m,o] = 0;
+
+s.t. r2_zero_odds_block {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES :
+        odds[b,m,o] = 0}:
+    second_round_bet[o1,b,m,o] = 0;
+
+# Freebet minimum odds constraint (only on freebet portion)
+s.t. r2_min_odds_freebet_block {o1 in OUTCOMES, b in BOOKIES, m in MARKETS, o in OUTCOMES :
+        odds[b,m,o] > 0 && odds[b,m,o] < minimum_odds_freebet[b]}:
+    rebet_freebet[o1,b,m,o] = 0;
+
+# Freebet usage limited by earned freebets (per scenario same cap)
+s.t. freebet_usage_limit {o1 in OUTCOMES, b in BOOKIES}:
+    sum {m in MARKETS, o in OUTCOMES} rebet_freebet[o1,b,m,o] <= freebets[b];
+
+# ----------------
+# Budget flow: round 2 cash depends on round-1 outcome o1
+# ----------------
+# Cash available after round 1 when outcome o1 wins:
+# initial_cash
+#   - total round1 stakes
+#   + payout from the winning round1 bets (stake * odds)
+s.t. r2_cash_budget {o1 in OUTCOMES}:
+    sum {b in BOOKIES, m in MARKETS, o in OUTCOMES} rebet_cash[o1,b,m,o]
+    <= initial_cash
+       - sum {b in BOOKIES, m in MARKETS, o in OUTCOMES} first_round_bet[b,m,o]
+       + sum {b in BOOKIES, m in MARKETS} first_round_bet[b,m,o1] * odds[b,m,o1];
+
+# ----------------
+# Profit calculation
+# ----------------
+s.t. calc_path_profit {o1 in OUTCOMES, o2 in OUTCOMES}:
+    path_profit[o1,o2] =
+        # Round 1 net
+        + sum {b in BOOKIES, m in MARKETS} first_round_bet[b,m,o1] * odds[b,m,o1]
+        - sum {b in BOOKIES, m in MARKETS, o in OUTCOMES} first_round_bet[b,m,o]
+        # Round 2 cash net (scenario o1)
+        + sum {b in BOOKIES, m in MARKETS} rebet_cash[o1,b,m,o2] * odds[b,m,o2]
+        - sum {b in BOOKIES, m in MARKETS, o in OUTCOMES} rebet_cash[o1,b,m,o]
+        # Round 2 freebet return (scenario o1)
+        + sum {b in BOOKIES, m in MARKETS}
+            rebet_freebet[o1,b,m,o2] *
+            (if freebet_snr[b] then (odds[b,m,o2] - 1) else odds[b,m,o2]);
+
+# Maximin bounds
+s.t. min_profit_bound {o1 in OUTCOMES, o2 in OUTCOMES}:
+    min_profit <= path_profit[o1,o2];
+
+# Readd ?
+# s.t. max_profit_bound {o1 in OUTCOMES, o2 in OUTCOMES}:
+#     max_profit >= path_profit[o1,o2];
+
+# s.t. profit_spread:
+    #     max_profit - min_profit <= profit_slack;
